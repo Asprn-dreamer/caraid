@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import DiagnosisForm from './components/DiagnosisForm';
@@ -87,24 +88,38 @@ const App: React.FC = () => {
     setHistory(prev => prev.map(item => 
       item.id === id ? { ...item, actualResult } : item
     ));
+    if (currentDiagnosis?.id === id) {
+      setCurrentDiagnosis(prev => prev ? { ...prev, actualResult } : null);
+    }
   };
 
   const handleUpdateTracking = (id: string, trackingNumber: string) => {
+    const trimmed = trackingNumber.trim();
     setHistory(prev => prev.map(item => 
-      item.id === id ? { ...item, trackingNumber: trackingNumber.trim() || undefined } : item
+      item.id === id ? { ...item, trackingNumber: trimmed || undefined } : item
     ));
+    if (currentDiagnosis?.id === id) {
+      setCurrentDiagnosis(prev => prev ? { ...prev, trackingNumber: trimmed || undefined } : null);
+    }
   };
 
   const handleUpdateRemark = (id: string, remark: string) => {
+    const trimmed = remark.trim();
     setHistory(prev => prev.map(item => 
-      item.id === id ? { ...item, remark: remark.trim() || undefined } : item
+      item.id === id ? { ...item, remark: trimmed || undefined } : item
     ));
+    if (currentDiagnosis?.id === id) {
+      setCurrentDiagnosis(prev => prev ? { ...prev, remark: trimmed || undefined } : null);
+    }
   };
 
   const handleUpdateStatus = (id: string, status: ProcessingStatus) => {
     setHistory(prev => prev.map(item => 
       item.id === id ? { ...item, status } : item
     ));
+    if (currentDiagnosis?.id === id) {
+      setCurrentDiagnosis(prev => prev ? { ...prev, status } : null);
+    }
   };
 
   const handleSaveToKnowledge = (entry: KnowledgeEntry) => {
@@ -127,10 +142,14 @@ const App: React.FC = () => {
     }
   };
 
-  const filteredHistory = history.filter(item => 
-    item.productName.toLowerCase().includes(historySearchQuery.toLowerCase()) ||
-    (item.trackingNumber && item.trackingNumber.toLowerCase().includes(historySearchQuery.toLowerCase()))
-  );
+  const filteredHistory = history.filter(item => {
+    const q = historySearchQuery.toLowerCase();
+    return (
+      item.productName.toLowerCase().includes(q) ||
+      item.result.faultIssue.toLowerCase().includes(q) ||
+      (item.trackingNumber && item.trackingNumber.toLowerCase().includes(q))
+    );
+  });
 
   const getStatusStyle = (status: ProcessingStatus) => {
     switch (status) {
@@ -180,7 +199,7 @@ const App: React.FC = () => {
                 </svg>
                 <input
                   type="text"
-                  placeholder="搜索产品、快递单号..."
+                  placeholder="搜索产品、故障问题、快递单号..."
                   className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                   value={historySearchQuery}
                   onChange={(e) => setHistorySearchQuery(e.target.value)}

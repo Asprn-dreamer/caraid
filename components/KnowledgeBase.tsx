@@ -13,7 +13,13 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ entries, onAddEntry, onUp
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<KnowledgeEntry>>({});
+  const [formData, setFormData] = useState<Partial<KnowledgeEntry>>({
+    productName: '',
+    faultType: '',
+    cause: '',
+    location: '',
+    solution: ''
+  });
 
   const filtered = entries.filter(e => 
     e.productName.toLowerCase().includes(search.toLowerCase()) ||
@@ -24,17 +30,29 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ entries, onAddEntry, onUp
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.productName && formData.faultType) {
+      const entryData: KnowledgeEntry = {
+        id: editingId || Math.random().toString(36).substr(2, 9),
+        productName: formData.productName || '',
+        faultType: formData.faultType || '',
+        cause: formData.cause || '未知原因',
+        location: formData.location || '未知部位',
+        solution: formData.solution || '按标准流程处理'
+      };
+
       if (editingId) {
-        onUpdateEntry({ ...formData, id: editingId } as KnowledgeEntry);
+        onUpdateEntry(entryData);
       } else {
-        onAddEntry({
-          ...formData,
-          id: Math.random().toString(36).substr(2, 9),
-        } as KnowledgeEntry);
+        onAddEntry(entryData);
       }
       setShowForm(false);
       setEditingId(null);
-      setFormData({});
+      setFormData({
+        productName: '',
+        faultType: '',
+        cause: '',
+        location: '',
+        solution: ''
+      });
     }
   };
 
@@ -44,10 +62,22 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ entries, onAddEntry, onUp
     setShowForm(true);
   };
 
+  const resetAndClose = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setFormData({
+      productName: '',
+      faultType: '',
+      cause: '',
+      location: '',
+      solution: ''
+    });
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center gap-4">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="relative flex-1 w-full">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6.197-6.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
           </svg>
@@ -60,8 +90,8 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ entries, onAddEntry, onUp
           />
         </div>
         <button
-          onClick={() => { setShowForm(true); setEditingId(null); setFormData({}); }}
-          className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 transition-all flex items-center gap-2 shrink-0"
+          onClick={() => { setShowForm(true); setEditingId(null); setFormData({ productName: '', faultType: '', cause: '', location: '', solution: '' }); }}
+          className="w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shrink-0"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -110,11 +140,16 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ entries, onAddEntry, onUp
             </div>
           </div>
         ))}
+        {filtered.length === 0 && (
+          <div className="col-span-full py-20 text-center text-slate-400 italic">
+            没有找到匹配的知识条目
+          </div>
+        )}
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
             <h2 className="text-xl font-bold text-slate-900 mb-6">{editingId ? '修改专家知识' : '向知识库贡献内容'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -168,14 +203,14 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ entries, onAddEntry, onUp
               <div className="flex gap-4 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
-                  className="flex-1 px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-lg hover:bg-slate-200"
+                  onClick={resetAndClose}
+                  className="flex-1 px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-lg hover:bg-slate-200 transition-colors"
                 >
                   取消
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-100"
+                  className="flex-1 px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all"
                 >
                   {editingId ? '保存修改' : '确认存入'}
                 </button>
