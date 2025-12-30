@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { analyzeProductFault } from '../services/geminiService';
 import { FaultDiagnosis, KnowledgeEntry } from '../types';
@@ -219,10 +220,10 @@ const DiagnosisForm: React.FC<DiagnosisFormProps> = ({ onResult, history, knowle
                 />
               </div>
               <div className="space-y-2 md:col-span-1">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">物流单号</label>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">物流单号 (可选)</label>
                 <input
                   type="text"
-                  placeholder="寄回单号..."
+                  placeholder="选填寄回单号..."
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                   value={trackingNumber}
                   onChange={(e) => setTrackingNumber(e.target.value)}

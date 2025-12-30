@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
 import { FaultDiagnosis } from '../types';
@@ -53,7 +54,6 @@ const Dashboard: React.FC<DashboardProps> = ({ history }) => {
     } else {
       const dataForIssues = filteredHistory.filter(h => h.category === selectedCategory);
       dataForIssues.forEach(d => {
-        // 统计故障问题分布
         counts[d.result.faultIssue] = (counts[d.result.faultIssue] || 0) + 1;
       });
     }
@@ -62,6 +62,11 @@ const Dashboard: React.FC<DashboardProps> = ({ history }) => {
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
   }, [filteredHistory, selectedCategory]);
+
+  const handleGoToToday = () => {
+    setSelectedDate(new Date());
+    setShowCalendar(false);
+  };
 
   const renderCalendar = () => {
     const year = selectedDate.getFullYear();
@@ -93,6 +98,17 @@ const Dashboard: React.FC<DashboardProps> = ({ history }) => {
               )}
             </div>
           ))}
+        </div>
+        <div className="mt-4 pt-2 border-t border-slate-100">
+          <button 
+            onClick={handleGoToToday}
+            className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            跳转至今日
+          </button>
         </div>
       </div>
     );

@@ -1,7 +1,5 @@
 {
   "name": "车管家一站式售后平台",
   "description": "An intelligent platform for analyzing product faults, predicting failure locations, and providing comprehensive statistical insights using Gemini AI.",
-  "requestFramePermissions": [
-    "camera"
-  ]
+  "requestFramePermissions": []
 }

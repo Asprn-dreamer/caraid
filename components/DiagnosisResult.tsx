@@ -221,16 +221,16 @@ const DiagnosisResult: React.FC<DiagnosisResultProps> = ({
               <div className="space-y-4">
                 <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-4">
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">售后物流单号</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">售后物流单号 (可选)</label>
                     <div className="flex gap-2">
                       <input 
                         className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500/20"
                         value={tempTracking}
                         onChange={(e) => setTempTracking(e.target.value)}
-                        placeholder="输入单号..."
+                        placeholder="选填寄回单号..."
                       />
-                      <button onClick={handleQueryAndSaveTracking} className="px-3 py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors">
-                        {isTrackingSaved ? '✓' : '查询'}
+                      <button onClick={handleQueryAndSaveTracking} className="px-3 py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors min-w-[50px]">
+                        {isTrackingSaved ? '✓' : (tempTracking.trim() ? '查询' : '保存')}
                       </button>
                     </div>
                   </div>

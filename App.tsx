@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Layout from './components/Layout';
 import DiagnosisForm from './components/DiagnosisForm';
 import DiagnosisResult from './components/DiagnosisResult';
@@ -54,6 +54,8 @@ const INITIAL_DATA: FaultDiagnosis[] = [
   }
 ];
 
+type HistoryTimeRange = 'all' | 'week' | 'month' | 'year' | 'day';
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AppTab>(AppTab.DIAGNOSIS);
   const [history, setHistory] = useState<FaultDiagnosis[]>(() => {
@@ -70,6 +72,9 @@ const App: React.FC = () => {
   });
   const [currentDiagnosis, setCurrentDiagnosis] = useState<FaultDiagnosis | null>(null);
   const [historySearchQuery, setHistorySearchQuery] = useState('');
+  const [historyTimeRange, setHistoryTimeRange] = useState<HistoryTimeRange>('all');
+  const [historySelectedDate, setHistorySelectedDate] = useState<Date>(new Date());
+  const [showHistoryCalendar, setShowHistoryCalendar] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('fixwise_history', JSON.stringify(history));
@@ -142,14 +147,50 @@ const App: React.FC = () => {
     }
   };
 
-  const filteredHistory = history.filter(item => {
-    const q = historySearchQuery.toLowerCase();
-    return (
-      item.productName.toLowerCase().includes(q) ||
-      item.result.faultIssue.toLowerCase().includes(q) ||
-      (item.trackingNumber && item.trackingNumber.toLowerCase().includes(q))
-    );
-  });
+  const filteredHistory = useMemo(() => {
+    const now = new Date();
+    
+    return history.filter(item => {
+      // 1. 搜索词筛选
+      const q = historySearchQuery.toLowerCase();
+      const matchesSearch = (
+        item.productName.toLowerCase().includes(q) ||
+        item.result.faultIssue.toLowerCase().includes(q) ||
+        (item.trackingNumber && item.trackingNumber.toLowerCase().includes(q))
+      );
+      
+      if (!matchesSearch) return false;
+
+      // 2. 时间维度筛选
+      if (historyTimeRange === 'all') return true;
+
+      const itemDate = new Date(item.timestamp);
+      
+      if (historyTimeRange === 'day') {
+        return itemDate.toDateString() === historySelectedDate.toDateString();
+      }
+
+      if (historyTimeRange === 'week') {
+        const startOfWeek = new Date(now);
+        const day = now.getDay() || 7; 
+        startOfWeek.setDate(now.getDate() - day + 1);
+        startOfWeek.setHours(0, 0, 0, 0);
+        return item.timestamp >= startOfWeek.getTime();
+      }
+      
+      if (historyTimeRange === 'month') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        return item.timestamp >= startOfMonth.getTime();
+      }
+      
+      if (historyTimeRange === 'year') {
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        return item.timestamp >= startOfYear.getTime();
+      }
+
+      return true;
+    });
+  }, [history, historySearchQuery, historyTimeRange, historySelectedDate]);
 
   const getStatusStyle = (status: ProcessingStatus) => {
     switch (status) {
@@ -162,6 +203,63 @@ const App: React.FC = () => {
 
   const handleQueryLogistics = (num: string) => {
     window.open(`https://www.kuaidi100.com/chaxun?nu=${num}`, '_blank');
+  };
+
+  const handleHistoryGoToToday = () => {
+    setHistorySelectedDate(new Date());
+    setHistoryTimeRange('day');
+    setShowHistoryCalendar(false);
+  };
+
+  const renderHistoryCalendar = () => {
+    const year = historySelectedDate.getFullYear();
+    const month = historySelectedDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const days = [];
+    for (let i = 0; i < (firstDay === 0 ? 6 : firstDay - 1); i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(i);
+
+    return (
+      <div className="absolute top-full right-0 mt-2 p-4 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 w-72">
+        <div className="flex justify-between items-center mb-4">
+          <button onClick={() => setHistorySelectedDate(new Date(year, month - 1, 1))} className="p-1 hover:bg-slate-100 rounded-lg"><svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
+          <span className="font-bold text-slate-700">{year}年 {month + 1}月</span>
+          <button onClick={() => setHistorySelectedDate(new Date(year, month + 1, 1))} className="p-1 hover:bg-slate-100 rounded-lg"><svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>
+        </div>
+        <div className="grid grid-cols-7 gap-1 text-center">
+          {['一', '二', '三', '四', '五', '六', '日'].map(d => <span key={d} className="text-[10px] font-bold text-slate-300 uppercase">{d}</span>)}
+          {days.map((day, idx) => (
+            <div key={idx} className="h-8 flex items-center justify-center">
+              {day && (
+                <button
+                  onClick={() => { 
+                    setHistorySelectedDate(new Date(year, month, day)); 
+                    setHistoryTimeRange('day');
+                    setShowHistoryCalendar(false); 
+                  }}
+                  className={`w-7 h-7 rounded-lg text-xs transition-all ${historySelectedDate.getDate() === day && historySelectedDate.getMonth() === month && historyTimeRange === 'day' ? 'bg-indigo-600 text-white font-bold' : 'hover:bg-indigo-50 text-slate-600'}`}
+                >
+                  {day}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 pt-2 border-t border-slate-100">
+          <button 
+            onClick={handleHistoryGoToToday}
+            className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            返回今日
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -192,8 +290,8 @@ const App: React.FC = () => {
 
         {activeTab === AppTab.HISTORY && (
           <div className="animate-in fade-in duration-500 space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="relative flex-1 w-full">
+            <div className="flex flex-col xl:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="relative flex-1 w-full max-w-xl">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6.197-6.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                 </svg>
@@ -205,8 +303,49 @@ const App: React.FC = () => {
                   onChange={(e) => setHistorySearchQuery(e.target.value)}
                 />
               </div>
-              <div className="text-sm text-slate-400 font-medium px-2">
-                共找到 {filteredHistory.length} 条记录
+
+              <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-50 rounded-2xl border border-slate-100 w-full xl:w-auto">
+                <div className="flex gap-1">
+                  {[
+                    { id: 'all', label: '全部' },
+                    { id: 'week', label: '本周' },
+                    { id: 'month', label: '本月' },
+                    { id: 'year', label: '本年' }
+                  ].map((range) => (
+                    <button
+                      key={range.id}
+                      onClick={() => setHistoryTimeRange(range.id as HistoryTimeRange)}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                        historyTimeRange === range.id 
+                          ? 'bg-white text-indigo-600 shadow-sm border-indigo-100 border' 
+                          : 'text-slate-400 hover:text-slate-600'
+                      }`}
+                    >
+                      {range.label}
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+                
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowHistoryCalendar(!showHistoryCalendar)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                      historyTimeRange === 'day' 
+                        ? 'bg-white text-indigo-600 shadow-sm border-indigo-100 border' 
+                        : 'text-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>
+                    {historyTimeRange === 'day' ? historySelectedDate.toLocaleDateString() : '日历筛选'}
+                  </button>
+                  {showHistoryCalendar && renderHistoryCalendar()}
+                </div>
+              </div>
+
+              <div className="hidden xl:block text-sm text-slate-400 font-medium px-2 shrink-0">
+                共 {filteredHistory.length} 条
               </div>
             </div>
 
@@ -243,15 +382,20 @@ const App: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <select 
-                            value={item.status}
-                            onChange={(e) => handleUpdateStatus(item.id, e.target.value as ProcessingStatus)}
-                            className={`appearance-none px-3 py-1.5 rounded-lg text-xs font-bold border outline-none cursor-pointer transition-all ${getStatusStyle(item.status)}`}
-                          >
-                            <option value="Unprocessed">未处理</option>
-                            <option value="Processing">处理中</option>
-                            <option value="Processed">已处理</option>
-                          </select>
+                          <div className="relative inline-block w-32">
+                            <select 
+                              value={item.status}
+                              onChange={(e) => handleUpdateStatus(item.id, e.target.value as ProcessingStatus)}
+                              className={`w-full appearance-none px-3 py-1.5 rounded-lg text-xs font-bold border outline-none cursor-pointer transition-all ${getStatusStyle(item.status)}`}
+                            >
+                              <option value="Unprocessed">未处理</option>
+                              <option value="Processing">处理中</option>
+                              <option value="Processed">已处理</option>
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                            </div>
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           {item.trackingNumber ? (
@@ -274,7 +418,7 @@ const App: React.FC = () => {
                         <td className="px-6 py-4 text-right whitespace-nowrap">
                           <button 
                             onClick={() => setCurrentDiagnosis(item)}
-                            className="text-indigo-600 hover:text-indigo-800 text-sm font-bold"
+                            className="bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-600 px-4 py-1.5 rounded-lg text-xs font-bold transition-all"
                           >
                             详情
                           </button>
@@ -283,8 +427,13 @@ const App: React.FC = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
-                        未找到匹配的历史记录
+                      <td colSpan={6} className="px-6 py-20 text-center">
+                        <div className="flex flex-col items-center justify-center text-slate-300">
+                          <svg className="w-12 h-12 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <p className="text-sm font-medium">未找到符合当前条件的记录</p>
+                        </div>
                       </td>
                     </tr>
                   )}

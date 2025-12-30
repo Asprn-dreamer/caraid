@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { FaultDiagnosis, KnowledgeEntry } from "../types";
 
@@ -10,7 +11,8 @@ export const analyzeProductFault = async (
   knowledge: KnowledgeEntry[] = [],
   imageData?: string
 ): Promise<FaultDiagnosis['result']> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  // 严格遵循初始化规范
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
   const model = 'gemini-3-flash-preview'; 
   
   const relevantHistory = history
@@ -70,6 +72,7 @@ export const analyzeProductFault = async (
 
   try {
     const text = response.text;
+    if (!text) throw new Error("Empty response");
     const parsed = JSON.parse(text);
     
     return {
