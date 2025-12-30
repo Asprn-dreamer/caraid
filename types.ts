@@ -1,3 +1,4 @@
+
 export interface GroundingLink {
   title: string;
   uri: string;
@@ -20,6 +21,7 @@ export interface FaultDiagnosis {
   remark?: string;
   status: ProcessingStatus;
   trackingNumber?: string;
+  imageUrl?: string; // 存储 base64 图片数据
   result: {
     faultIssue: string;
     confidence: number;

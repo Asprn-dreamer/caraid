@@ -147,6 +147,12 @@ const App: React.FC = () => {
     }
   };
 
+  const handleDeleteHistory = (id: string) => {
+    if (confirm('确定要彻底删除这条历史记录吗？此操作不可撤销。')) {
+      setHistory(prev => prev.filter(item => item.id !== id));
+    }
+  };
+
   const filteredHistory = useMemo(() => {
     const now = new Date();
     
@@ -345,7 +351,7 @@ const App: React.FC = () => {
               </div>
 
               <div className="hidden xl:block text-sm text-slate-400 font-medium px-2 shrink-0">
-                共 {filteredHistory.length} 条
+                共 {filteredHistory.length} 条记录
               </div>
             </div>
 
@@ -369,10 +375,27 @@ const App: React.FC = () => {
                           {new Date(item.timestamp).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 max-w-xs">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-800">{item.productName}</span>
-                            <span className="text-xs text-indigo-500 font-medium">{item.category}</span>
-                            <span className="text-[10px] text-slate-400">{item.sourceRegion}</span>
+                          <div className="flex items-center gap-3">
+                            {item.imageUrl ? (
+                              <button 
+                                onClick={() => setCurrentDiagnosis(item)}
+                                className="w-11 h-11 rounded-lg overflow-hidden border border-slate-200 shrink-0 hover:border-indigo-400 transition-colors group relative"
+                              >
+                                <img src={item.imageUrl} alt="Proof" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-indigo-600/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <svg className="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" /></svg>
+                                </div>
+                              </button>
+                            ) : (
+                              <div className="w-11 h-11 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                                <svg className="w-5 h-5 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                              </div>
+                            )}
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-bold text-slate-800 truncate">{item.productName}</span>
+                              <span className="text-[11px] text-indigo-500 font-medium">{item.category}</span>
+                              <span className="text-[10px] text-slate-400">{item.sourceRegion}</span>
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -416,12 +439,23 @@ const App: React.FC = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 text-right whitespace-nowrap">
-                          <button 
-                            onClick={() => setCurrentDiagnosis(item)}
-                            className="bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-600 px-4 py-1.5 rounded-lg text-xs font-bold transition-all"
-                          >
-                            详情
-                          </button>
+                          <div className="flex justify-end gap-2">
+                            <button 
+                              onClick={() => setCurrentDiagnosis(item)}
+                              className="bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                            >
+                              详情
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteHistory(item.id)}
+                              className="bg-rose-50 hover:bg-rose-600 text-rose-400 hover:text-white px-3 py-1.5 rounded-lg text-xs transition-all flex items-center justify-center"
+                              title="删除此记录"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))

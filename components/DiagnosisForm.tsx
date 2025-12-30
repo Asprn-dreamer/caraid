@@ -40,7 +40,7 @@ const DiagnosisForm: React.FC<DiagnosisFormProps> = ({ onResult, history, knowle
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!productName || !description || !sourceRegion) return;
+    if (!productName || !description) return;
 
     const normalizedProvince = normalizeToProvince(sourceRegion);
 
@@ -65,12 +65,13 @@ const DiagnosisForm: React.FC<DiagnosisFormProps> = ({ onResult, history, knowle
           sourceRegion: normalizedProvince,
           remark: remark.trim() || undefined,
           status: 'Unprocessed',
+          imageUrl: imagePreview || undefined,
           result
         };
         onResult(diagnosis);
         resetForm();
-      } catch (err) {
-        alert("分析失败。请重试。");
+      } catch (err: any) {
+        alert(err.message || "分析失败。请检查输入信息并重试。");
       } finally {
         setIsAnalyzing(false);
       }
@@ -85,6 +86,7 @@ const DiagnosisForm: React.FC<DiagnosisFormProps> = ({ onResult, history, knowle
         remark: remark.trim() || undefined,
         status: 'Processed',
         trackingNumber: trackingNumber.trim() || undefined,
+        imageUrl: imagePreview || undefined,
         result: {
           faultIssue: manualIssue || '未标注问题',
           confidence: 1.0,
@@ -172,11 +174,10 @@ const DiagnosisForm: React.FC<DiagnosisFormProps> = ({ onResult, history, knowle
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">售后来源</label>
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">售后来源 (可选)</label>
               <input
-                required
                 type="text"
-                placeholder="省份、城市或具体网点"
+                placeholder="默认为其他区域"
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 value={sourceRegion}
                 onChange={(e) => setSourceRegion(e.target.value)}
@@ -244,33 +245,31 @@ const DiagnosisForm: React.FC<DiagnosisFormProps> = ({ onResult, history, knowle
           </div>
 
           <div className="flex gap-4 items-start">
-             {mode === 'ai' && (
-              <div className="flex-1 space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">上传故障图片证据 (可选)</label>
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors group">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    {imagePreview ? (
-                      <div className="relative">
-                        <img src={imagePreview} alt="Preview" className="h-24 rounded-lg object-cover shadow-sm" />
-                        <div className="absolute -top-2 -right-2 bg-indigo-600 text-white p-1 rounded-full shadow-lg">
-                           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                        </div>
+            <div className="flex-1 space-y-2">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">上传故障图片证据 (可选)</label>
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors group">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  {imagePreview ? (
+                    <div className="relative">
+                      <img src={imagePreview} alt="Preview" className="h-24 rounded-lg object-cover shadow-sm" />
+                      <div className="absolute -top-2 -right-2 bg-indigo-600 text-white p-1 rounded-full shadow-lg">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                       </div>
-                    ) : (
-                      <>
-                        <svg className="w-8 h-8 mb-2 text-slate-400 group-hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                        <p className="text-xs text-slate-500">点击或拖拽上传照片</p>
-                      </>
-                    )}
-                  </div>
-                  <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
-                </label>
-              </div>
-            )}
+                    </div>
+                  ) : (
+                    <>
+                      <svg className="w-8 h-8 mb-2 text-slate-400 group-hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      <p className="text-xs text-slate-500">点击或拖拽上传照片</p>
+                    </>
+                  )}
+                </div>
+                <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+              </label>
+            </div>
 
             <div className="flex-1 self-end">
               <button
-                disabled={isAnalyzing || !productName || !description || !sourceRegion || (mode === 'manual' && !manualIssue)}
+                disabled={isAnalyzing || !productName || !description || (mode === 'manual' && !manualIssue)}
                 type="submit"
                 className={`w-full py-4 text-white font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 ${
                   isAnalyzing ? 'bg-indigo-400 cursor-not-allowed' : (mode === 'ai' ? 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-indigo-200' : 'bg-slate-800 hover:bg-slate-900')
